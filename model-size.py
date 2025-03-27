@@ -44,9 +44,12 @@ def get_model_details(repo_id):
         response.raise_for_status()  # Raise an exception for HTTP errors
         model_info = response.json()
         
-        # Try to get parameters from model card metadata
+        # Try to get parameters from safetensors data
         parameters = None
-        if model_info.get("model_card") and model_info["model_card"].get("parameters"):
+        if model_info.get("safetensors") and model_info["safetensors"].get("total"):
+            parameters = int(model_info["safetensors"]["total"])
+        # If not in safetensors, try model card metadata
+        elif model_info.get("model_card") and model_info["model_card"].get("parameters"):
             parameters = int(model_info["model_card"]["parameters"])
         else:
             # If parameters not in metadata, estimate from model name
@@ -61,7 +64,15 @@ def get_model_details(repo_id):
                     raise ValueError('Could not determine model parameters')
         
         # Default to fp32 as most models are distributed in this format
+        # Try to determine quantization from safetensors data
         quantization = 'fp32'
+        if model_info.get("safetensors") and model_info["safetensors"].get("parameters"):
+            # Check for different precision formats in parameters
+            if "BF16" in model_info["safetensors"]["parameters"]:
+                quantization = "fp16"  # BF16 is similar to FP16 in size
+            elif "FP16" in model_info["safetensors"]["parameters"]:
+                quantization = "fp16"
+            # Add more quantization detection if needed
         
         return ModelInfo(parameters, quantization)
     
@@ -117,6 +128,8 @@ def calculate_huggingface_model_memory(repo_id, context_window, os_overhead_gb=2
         The calculated memory usage in GB
     """
     model_info = get_model_details(repo_id)
+
+    print(model_info.parameters)
     
     # Convert parameters to billions
     parameters_in_billions = model_info.parameters / 1e9
@@ -139,8 +152,8 @@ def run_tests():
     # Test 2: Hugging Face model calculation
     try:
         print('Test 2: Hugging Face Model Calculation')
-        print('Model: meta-llama/Llama-2-7b-hf, 2048 context window')
-        hf_test = calculate_huggingface_model_memory('meta-llama/Llama-2-7b-hf', 2048)
+        print('Model: Qwen/Qwen2.5-1.5B-Instruct, 2048 context window')
+        hf_test = calculate_huggingface_model_memory('Qwen/Qwen2.5-1.5B-Instruct', 2048)
         print(f'Expected Memory Usage: {hf_test:.2f} GB\n')
     except Exception as error:
         print(f'Error fetching Hugging Face model details: {error}')
