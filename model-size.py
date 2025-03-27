@@ -1,5 +1,6 @@
 import requests
 import re
+import os
 
 # Quantization options mapping
 quantization_options = {
@@ -31,7 +32,16 @@ def get_model_details(repo_id):
     """
     try:
         # Get model info using the HF API
-        response = requests.get(f"https://huggingface.co/api/models/{repo_id}")
+        url = f"https://huggingface.co/api/models/{repo_id}"
+        
+        # Set up headers with authorization if HF_TOKEN is available
+        headers = {}
+        HF_TOKEN = os.environ.get("HF_TOKEN")
+        if HF_TOKEN:
+            headers["Authorization"] = f"Bearer {HF_TOKEN}"
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an exception for HTTP errors
         model_info = response.json()
         
         # Try to get parameters from model card metadata
@@ -55,8 +65,11 @@ def get_model_details(repo_id):
         
         return ModelInfo(parameters, quantization)
     
-    except Exception as error:
+    except requests.exceptions.RequestException as error:
         print(f'Error in get_model_details: {error}')
+        raise
+    except Exception as error:
+        print(f'Error processing model details: {error}')
         raise
 
 def calculate_memory_usage(parameters_in_billions, quantization, context_window, os_overhead_gb=2):
