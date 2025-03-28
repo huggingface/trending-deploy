@@ -14,11 +14,14 @@ from tqdm import tqdm, trange
 logging.basicConfig(format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
 
 
+# Text only for now, we can extend to vision and beyond as well
 DEFAULT_TASKS = [
     "feature-extraction",
     "sentence-similarity",
     "fill-mask",
     "token-classification",
+    "text-classification",
+    "zero-shot-classification",
 ]
 
 
@@ -73,7 +76,11 @@ class Trending():
         for task in tasks_iterator:
             tasks_iterator.set_description(f"Loading trending models for {task}")
             trending_model_generator = self.trending_model_generator(task)
-            models_to_consider += [next(trending_model_generator) for _ in trange(self.max_models_per_task, desc="Loading models", leave=False)]
+            try:
+                for _ in trange(self.max_models_per_task, desc="Loading models", leave=False):
+                    models_to_consider.append(next(trending_model_generator))
+            except StopIteration:
+                pass
 
         # Step 2: Solve the knapsack problem given the rewards and costs of the models
         budget = budget or self.budget
@@ -221,5 +228,5 @@ class Trending():
         return max_reward, selected_items[::-1]
 
 if __name__ == "__main__":
-    trending = Trending(tasks=DEFAULT_TASKS, max_models_per_task=200, budget=1000)
+    trending = Trending(tasks=DEFAULT_TASKS, max_models_per_task=300, budget=10_000)
     selected_models, max_reward, spent_budget = trending(filename="selected_models.json")
