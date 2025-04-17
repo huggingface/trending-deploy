@@ -15,7 +15,7 @@ from trending_deploy.models import get_num_parameters_from_model, get_viable_ins
 HF_TOKEN = os.environ.get("HF_TOKEN")
 VENDOR = "aws"
 REGION = "us-east-1"
-TYPE = "open"
+TYPE = "public"
 NAMESPACE = "hf-inference" 
 ENDPOINT_PREFIX = "trending-deploy-"
 
@@ -79,6 +79,7 @@ def deploy_model(model: Model) -> bool:
             type=TYPE,
             instance_size=instance_size,
             instance_type="intel-icl"
+            scale_to_zero_timeout=15
         )
         
         # Wait for deployment (with timeout to avoid blocking indefinitely)
