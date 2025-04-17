@@ -26,6 +26,8 @@ DEFAULT_TASKS = [
     "token-classification",
     "text-classification",
     "zero-shot-classification",
+    "translation",
+    # "text-ranking", # A good candidate, but not yet available to Deploy
 ]
 
 # Just AWS for now
