@@ -17,7 +17,7 @@ VENDOR = "aws"
 REGION = "us-east-1"
 TYPE = "public"
 NAMESPACE = "hf-inference" 
-ENDPOINT_PREFIX = "trending-deploy-"
+ENDPOINT_PREFIX = "auto-"
 
 # Instance size mapping based on instance memory
 # Maps instance memory to HF instance size (x1, x2, etc.)
@@ -70,6 +70,7 @@ def deploy_model(model: Model) -> bool:
 
         endpoint = create_inference_endpoint(
             name=endpoint_name,
+            namespace=NAMESPACE,
             repository=model_name,
             framework="pytorch",
             task=task,
@@ -78,7 +79,7 @@ def deploy_model(model: Model) -> bool:
             region=REGION,
             type=TYPE,
             instance_size=instance_size,
-            instance_type="intel-icl"
+            instance_type="intel-icl",
             scale_to_zero_timeout=15
         )
         
