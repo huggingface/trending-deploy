@@ -10,9 +10,6 @@ from trending_deploy.costs import get_cost_from_model
 from trending_deploy.models import trending_models
 from trending_deploy.rewards import get_reward_from_model
 
-# Set the log level to INFO to get more information
-logging.basicConfig(format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
-
 
 class Trending():
     def __init__(self, tasks: list[str] | None = None, max_models_per_task: int = 200, budget: int | None = 1000):
