@@ -2,6 +2,7 @@
 import logging
 from pathlib import Path
 import json
+import pprint
 
 from trending_deploy.deploy import deploy_selected_models
 from trending_deploy.optimization import solve_knapsack
@@ -42,10 +43,14 @@ class Trending():
             raise ValueError("Budget must be specified")
         
         max_reward, spent_budget, selected_models = solve_knapsack(model_candidates, budget)
+        models_per_task = {task: 0 for task in self.tasks}
+        for model in selected_models:
+            models_per_task[model.model_info.pipeline_tag] += 1
 
         logging.info(f"Selected models: {len(selected_models)} out of {len(model_candidates)} candidate models")
         logging.info(f"Expected spent budget: ${spent_budget:,} out of ${budget:,}")
         logging.info(f"Maximum reward reached: {max_reward}")
+        logging.info(f"Models per task:\n{pprint.pformat(models_per_task)}")
 
         if filename is not None:
             with open(filename, "w") as f:
