@@ -14,12 +14,22 @@ Given a set of Machine Learning models with trending scores and hosting costs, d
 
 ### Sample Usage
 
-```python
+```bash
 python cli.py --max-models-per-task 300 --budget 10000 --filename "selected_models" --dry
 ```
 
 ```
-2025-03-28 16:04:44 - Selected models: 381 out of 1720 models
-2025-03-28 16:04:44 - Expected spent budget: 9984 out of 10000                                                                                               
-2025-03-28 16:04:44 - Maximum reward reached: 695
+2025-04-23 15:27:18 - Selected models: 391 out of 2021 candidate models
+2025-04-23 15:27:18 - Expected spent budget: $9,984 out of $10,000                                                                                                                           
+2025-04-23 15:27:18 - Maximum reward reached: 2063
+2025-04-23 15:27:18 - Models per task:
+{'feature-extraction': 69,
+ 'fill-mask': 99,
+ 'sentence-similarity': 67,
+ 'text-classification': 86,
+ 'token-classification': 33,
+ 'translation': 26,
+ 'zero-shot-classification': 11}
+2025-04-23 15:27:34 - Selected 391 models with total reward of 2063
+2025-04-23 15:27:34 - Spent budget: $9,984 out of $10,000
 ```
