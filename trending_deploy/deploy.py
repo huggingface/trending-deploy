@@ -84,7 +84,7 @@ def deploy_model(model: Model) -> bool:
                 scale_to_zero_timeout=15,
                 domain="api-inference.endpoints.huggingface.tech",
                 path=f"/models/{model_name}",
-                tags=["auto", "api-inference"]
+                tags=["auto", "api-inference"],
                 custom_image={
                     "health_route": "/health",  # Default health route for TEI
                     "port": 80,               # Default port
