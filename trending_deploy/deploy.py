@@ -57,7 +57,7 @@ def deploy_model(model: Model) -> bool:
     """
     try:
         model_name = model.model_info.id
-        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.replace('/', '-')}"[:30].lower()
+        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.replace('/', '-').replace('.', '-')}"[:30].lower()
         
         # Get task from model info
         task = model.model_info.pipeline_tag
@@ -68,55 +68,38 @@ def deploy_model(model: Model) -> bool:
             "x1"  # Default to x1 if mapping not found
         )
 
+        endpoint_kwargs = {
+            "name": endpoint_name,
+            "namespace": NAMESPACE,
+            "repository": model_name,
+            "framework": "pytorch",
+            "task": task,
+            "accelerator": "cpu",
+            "vendor": VENDOR,
+            "region": REGION,
+            "type": TYPE,
+            "instance_size": instance_size,
+            "instance_type": "intel-icl",
+            "scale_to_zero_timeout": 15,
+            "domain": "api-inference.endpoints.huggingface.tech",
+            "path": f"/models/{model_name}",
+            "tags": ["auto", "api-inference"]
+        }
+
         if "text-embeddings-inference" in model.model_info.tags:
-            endpoint = create_inference_endpoint(
-                name=endpoint_name,
-                namespace=NAMESPACE,
-                repository=model_name,
-                framework="pytorch",
-                task=task,
-                accelerator="cpu",
-                vendor=VENDOR,
-                region=REGION,
-                type=TYPE,
-                instance_size=instance_size,
-                instance_type="intel-icl",
-                scale_to_zero_timeout=15,
-                domain="api-inference.endpoints.huggingface.tech",
-                path=f"/models/{model_name}",
-                tags=["auto", "api-inference"],
-                custom_image={
-                    "health_route": "/health",  # Default health route for TEI
-                    "port": 80,               # Default port
-                    "url": "ghcr.io/huggingface/text-embeddings-inference:cpu-1.7.0", # Standard TEI image URL
-                    "maxBatchTokens": 16384,
-                    "maxConcurrentRequests": 512,
-                }
-                )
-                # Wait for deployment (with timeout to avoid blocking indefinitely)
-            endpoint.wait(timeout=300)
-            return True
-        else:
-            endpoint = create_inference_endpoint(
-                name=endpoint_name,
-                namespace=NAMESPACE,
-                repository=model_name,
-                framework="pytorch",
-                task=task,
-                accelerator="cpu",
-                vendor=VENDOR,
-                region=REGION,
-                type=TYPE,
-                instance_size=instance_size,
-                instance_type="intel-icl",
-                scale_to_zero_timeout=15,
-                domain="api-inference.endpoints.huggingface.tech",
-                path=f"/models/{model_name}",
-                tags=["auto", "api-inference"]
-            )
-            # Wait for deployment (with timeout to avoid blocking indefinitely)
-            endpoint.wait(timeout=300)
-            return True
+            endpoint_kwargs["custom_image"] = {
+                "health_route": "/health",  # Default health route for TEI
+                "port": 80,               # Default port
+                "url": "ghcr.io/huggingface/text-embeddings-inference:cpu-1.7.0", # Standard TEI image URL
+                "maxBatchTokens": 16384,
+                "maxConcurrentRequests": 512,
+            }
+
+        endpoint = create_inference_endpoint(**endpoint_kwargs)
+        
+        # Wait for deployment (with timeout to avoid blocking indefinitely)
+        endpoint.wait(timeout=300)
+        return True
     except Exception as e:
         print(f"Error deploying model {model.model_info.id}: {e}")
         return False
