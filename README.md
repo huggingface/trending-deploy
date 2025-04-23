@@ -15,7 +15,7 @@ Given a set of Machine Learning models with trending scores and hosting costs, d
 ### Sample Usage
 
 ```bash
-python cli.py --max-models-per-task 300 --budget 10000 --filename "selected_models" --dry
+python cli.py --max-models-per-task 300 --budget 10000 --filename "selected_models.json" --dry
 ```
 
 ```
