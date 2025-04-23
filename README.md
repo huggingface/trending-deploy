@@ -12,22 +12,10 @@ Given a set of Machine Learning models with trending scores and hosting costs, d
 
 **Goal:** Solve the [0/1 Knapsack optimization problem](https://en.wikipedia.org/wiki/Knapsack_problem#0-1_knapsack_problem) to maximize total reward while staying within the budget.
 
-### Sample Output:
+### Sample Usage
 
 ```python
-trending = Trending(
-    tasks=[
-        "feature-extraction",
-        "sentence-similarity",
-        "fill-mask",
-        "token-classification",
-        "text-classification",
-        "zero-shot-classification",
-    ],
-    max_models_per_task=300,
-    budget=10_000,
-)
-selected_models, max_reward, spent_budget = trending(filename="selected_models.json")
+python cli.py --max-models-per-task 300 --budget 10000 --filename "selected_models" --dry
 ```
 
 ```
