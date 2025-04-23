@@ -80,9 +80,11 @@ def deploy_model(model: Model) -> bool:
             type=TYPE,
             instance_size=instance_size,
             instance_type="intel-icl",
-            scale_to_zero_timeout=15
+            scale_to_zero_timeout=15,
+            domain="api-inference.endpoints.huggingface.tech",
+            path=f"/models/{model_name}",
+            tags=["auto", "api-inference"]
         )
-        
         # Wait for deployment (with timeout to avoid blocking indefinitely)
         endpoint.wait(timeout=300)
         return True
