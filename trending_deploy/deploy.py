@@ -88,7 +88,7 @@ def deploy_model(model: Model) -> bool:
                 custom_image={
                     "health_route": "/health",  # Default health route for TEI
                     "port": 80,               # Default port
-                    "url": "ghcr.io/huggingface/text-embeddings-inference:latest", # Standard TEI image URL
+                    "url": "ghcr.io/huggingface/text-embeddings-inference:cpu-1.7.0", # Standard TEI image URL
                     "maxBatchTokens": 16384,
                     "maxConcurrentRequests": 512,
                 }
