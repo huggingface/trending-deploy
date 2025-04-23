@@ -57,7 +57,7 @@ def deploy_model(model: Model) -> bool:
     """
     try:
         model_name = model.model_info.id
-        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.split("/")[-1].replace('.', '-')}"[:31].lower()
+        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.split('/')[-1].replace('.', '-')}"[:31].lower()
         
         # Get task from model info
         task = model.model_info.pipeline_tag
@@ -65,7 +65,7 @@ def deploy_model(model: Model) -> bool:
         # Get instance size directly from the viable_instance memory
         instance_size = INSTANCE_SIZE_MAPPING.get(
             model.viable_instance.memory_usage_bytes, 
-            "x1"  # Default to x1 if mapping not found
+            "x2"  # Default to x2 if mapping not found
         )
 
         endpoint_kwargs = {
