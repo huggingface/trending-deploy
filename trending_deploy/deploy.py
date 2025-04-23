@@ -79,7 +79,7 @@ def deploy_model(model: Model) -> bool:
             "region": REGION,
             "type": TYPE,
             "instance_size": instance_size,
-            "instance_type": "intel-icl",
+            "instance_type": "intel-spr",
             "scale_to_zero_timeout": 15,
             "domain": "api-inference.endpoints.huggingface.tech",
             "path": f"/models/{model_name}",
