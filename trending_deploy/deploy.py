@@ -66,7 +66,7 @@ def deploy_model(model: Model) -> bool:
 
         # Determine instance size
         initial_memory = model.viable_instance.memory_usage_bytes
-        instance_size = INSTANCE_SIZE_MAPPING.get(initial_memory, "x2") # Default to x2
+        instance_size = INSTANCE_SIZE_MAPPING.get(initial_memory, "x1") # Default to x1
 
         # Increase instance size by one notch for text-embeddings-inference
         if "text-embeddings-inference" in model.model_info.tags:
