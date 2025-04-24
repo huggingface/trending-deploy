@@ -4,6 +4,7 @@ from huggingface_hub import (
     InferenceClient,
     create_inference_endpoint,
     get_inference_endpoint,
+    get_collection,
     list_inference_endpoints,
     model_info as get_model_info,
     add_collection_item,
@@ -148,14 +149,44 @@ def undeploy_model(model_name: str) -> bool:
     try:
         # Find the endpoint for this model
         endpoints = list_inference_endpoints(namespace=NAMESPACE)
+        endpoint_found = False
         for endpoint in endpoints:
             if endpoint.repository == model_name and endpoint.name.startswith(ENDPOINT_PREFIX):
+                print(f"Deleting endpoint {endpoint.name} for model {model_name}...")
                 endpoint.delete()
-                delete_collection_item(COLLECTION_SLUG, item_id=model_name)
-                return True
-        return False
+                endpoint_found = True
+                print(f"Endpoint {endpoint.name} deleted successfully.")
+                break # Assuming only one endpoint per model
+
+        if not endpoint_found:
+            print(f"Warning: Endpoint for model {model_name} not found. Cannot undeploy.")
+            # Decide if this should be considered a failure or success if no endpoint existed
+            return True # Or False, depending on desired behavior
+
+        # Find and delete the corresponding item in the collection
+        try:
+            collection = get_collection(COLLECTION_SLUG)
+            item_object_id_to_delete = None
+            for item in collection.items:
+                # item_id is the model repo id (e.g., 'bert-base-uncased')
+                # _id is the collection item's internal object id
+                if item.item_type == "model" and item.item_id == model_name:
+                    item_object_id_to_delete = item._id
+                    break
+
+            if item_object_id_to_delete:
+                print(f"Deleting item for {model_name} (ID: {item_object_id_to_delete}) from collection {COLLECTION_SLUG}...")
+                delete_collection_item(COLLECTION_SLUG, item_object_id=item_object_id_to_delete)
+                print(f"Collection item for {model_name} deleted successfully.")
+            else:
+                print(f"Warning: Could not find item for model {model_name} in collection {COLLECTION_SLUG}.")
+
+        except Exception as e_coll:
+            print(f"Error managing collection item for model {model_name}: {e_coll}")
+
+        return True # Return True as endpoint deletion was the primary goal
     except Exception as e:
-        print(f"Error undeploying model {model_name}: {e}")
+        print(f"Error during undeployment process for model {model_name}: {e}")
         return False
 
 
