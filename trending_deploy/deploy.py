@@ -6,7 +6,8 @@ from huggingface_hub import (
     get_inference_endpoint,
     list_inference_endpoints,
     model_info as get_model_info,
-    add_collection_item
+    add_collection_item,
+    delete_collection_item,
 )
 
 from trending_deploy.constants import Model, MEMORY_USAGE_TO_INSTANCE, Instance, INSTANCES
