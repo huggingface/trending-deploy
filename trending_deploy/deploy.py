@@ -171,7 +171,7 @@ def undeploy_model(model_name: str) -> bool:
                 # item_id is the model repo id (e.g., 'bert-base-uncased')
                 # _id is the collection item's internal object id
                 if item.item_type == "model" and item.item_id == model_name:
-                    item_object_id_to_delete = item._id
+                    item_object_id_to_delete = item.item_object_id
                     break
 
             if item_object_id_to_delete:
