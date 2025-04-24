@@ -5,7 +5,8 @@ from huggingface_hub import (
     create_inference_endpoint,
     get_inference_endpoint,
     list_inference_endpoints,
-    model_info as get_model_info
+    model_info as get_model_info,
+    add_collection_item
 )
 
 from trending_deploy.constants import Model, MEMORY_USAGE_TO_INSTANCE, Instance, INSTANCES
@@ -18,6 +19,7 @@ REGION = "us-east-1"
 TYPE = "public"
 NAMESPACE = "hf-inference"
 ENDPOINT_PREFIX = "auto-"
+COLLECTION_SLUG = "hf-inference/deployed-models-680a42b770e6b6cd546c3fbc"
 
 # Instance size mapping based on instance memory
 # Maps instance memory to HF instance size (x1, x2, etc.)
@@ -124,6 +126,8 @@ def deploy_model(model: Model) -> bool:
         # Wait for deployment (with timeout to avoid blocking indefinitely)
         endpoint.wait(timeout=300)
         print(f"Endpoint {endpoint_name} for model {model_name} deployed successfully.")
+        add_collection_item(COLLECTION_SLUG, item_id=model_name, item_type="model")
+        
         return True
     except Exception as e:
         print(f"Error deploying model {model.model_info.id}: {e}")
