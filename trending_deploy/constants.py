@@ -18,16 +18,51 @@ class Model:
     def to_dict(self):
         return asdict(self)
 
-# Text only for now, we can extend to vision and beyond as well
-DEFAULT_TASKS = [
+# Based on https://github.com/huggingface/hub-docs/tree/main/docs/inference-providers/tasks
+ALL_TASKS = [
+    # Audio
+    "audio-classification",
+    "automatic-speech-recognition",
+
+    # Image
+    "image-classification",
+    "image-segmentation",
+    "image-to-image",
+    "object-detection",
+    "text-to-image",
+
+    # Video
+    "text-to-video",
+
+    # Text
     "feature-extraction",
-    "sentence-similarity",
     "fill-mask",
-    "token-classification",
+    "sentence-similarity",
+    "question-answering",
+    "summarization",
     "text-classification",
-    "zero-shot-classification",
+    "text-generation",
+    "text-ranking",
+    "token-classification",
     "translation",
-    # "text-ranking", # A good candidate, but not yet available to Deploy
+    "zero-shot-classification",
+
+    # Table
+    "table-question-answering",
+]
+GPU_ONLY_TASKS = [
+    "image-to-image",
+    "text-to-image",
+    "text-to-video",
+    "text-generation",
+    "automatic-speech-recognition",
+    "object-detection",
+]
+NOT_IMPLEMENTED_TASKS = [
+    "text-ranking",
+]
+DEFAULT_TASKS = [
+    task for task in ALL_TASKS if task not in (GPU_ONLY_TASKS + NOT_IMPLEMENTED_TASKS)
 ]
 
 # Just AWS for now

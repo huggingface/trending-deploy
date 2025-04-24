@@ -12,26 +12,32 @@ Given a set of Machine Learning models with trending scores and hosting costs, d
 
 **Goal:** Solve the [0/1 Knapsack optimization problem](https://en.wikipedia.org/wiki/Knapsack_problem#0-1_knapsack_problem) to maximize total reward while staying within the budget.
 
-### Sample Output:
+### Sample Usage
 
-```python
-trending = Trending(
-    tasks=[
-        "feature-extraction",
-        "sentence-similarity",
-        "fill-mask",
-        "token-classification",
-        "text-classification",
-        "zero-shot-classification",
-    ],
-    max_models_per_task=300,
-    budget=10_000,
-)
-selected_models, max_reward, spent_budget = trending(filename="selected_models.json")
+```bash
+python cli.py --max-models-per-task 300 --budget 10000 --filename "selected_models.json" --dry
 ```
 
 ```
-2025-03-28 16:04:44 - Selected models: 381 out of 1720 models
-2025-03-28 16:04:44 - Expected spent budget: 9984 out of 10000                                                                                               
-2025-03-28 16:04:44 - Maximum reward reached: 695
+2025-04-23 15:54:38 - Selected models: 389 out of 4211 candidate models
+2025-04-23 15:54:38 - Expected spent budget: $9,985 out of $10,000
+2025-04-23 15:54:38 - Maximum reward reached: 2239
+2025-04-23 15:54:38 - Models per task:
+{'audio-classification': 6,
+ 'automatic-speech-recognition': 16,
+ 'feature-extraction': 54,
+ 'fill-mask': 99,
+ 'image-classification': 29,
+ 'image-segmentation': 17,
+ 'object-detection': 12,
+ 'question-answering': 10,
+ 'sentence-similarity': 65,
+ 'summarization': 6,
+ 'table-question-answering': 1,
+ 'text-classification': 47,
+ 'token-classification': 10,
+ 'translation': 13,
+ 'zero-shot-classification': 4}
+2025-04-23 15:54:38 - Selected 389 models with total reward of 2239
+2025-04-23 15:54:38 - Spent budget: $9,985 out of $10,000
 ```

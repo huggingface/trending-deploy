@@ -28,7 +28,7 @@ class Trending():
         self.max_models_per_task = max_models_per_task
         self.budget = budget
 
-    def __call__(self, budget: int | None = None, filename: str | Path | None = None):
+    def __call__(self, budget: int | None = None, filename: str | Path | None = None, deploy_models: bool = True):
         # Step 1: Load the trending models as model candidates
         model_candidates: list[Model] = trending_models(tasks=self.tasks, max_models_per_task=self.max_models_per_task)
 
@@ -56,16 +56,17 @@ class Trending():
             with open(filename, "w") as f:
                 json.dump([model.to_dict() for model in selected_models], f, indent=4, default=str)
 
-        # Step 4: Deploy the selected models
-        results = deploy_selected_models(selected_models)
+        if deploy_models:
+            # Step 4: Deploy the selected models
+            results = deploy_selected_models(selected_models)
 
-        logging.debug(f"Deployed models: {results['deployed_success']}")
-        logging.warning(f"Failed to deploy models: {results['deployed_failed']}")
-        logging.debug(f"Models already deployed: {results['undeployed_success']}")
-        logging.warning(f"Failed to undeploy models: {results['undeployed_failed']}")
+            logging.debug(f"Deployed models: {results['deployed_success']}")
+            logging.warning(f"Failed to deploy models: {results['deployed_failed']}")
+            logging.debug(f"Models already deployed: {results['undeployed_success']}")
+            logging.warning(f"Failed to undeploy models: {results['undeployed_failed']}")
 
         return selected_models, max_reward, spent_budget
 
 if __name__ == "__main__":
     trending = Trending(tasks=DEFAULT_TASKS, max_models_per_task=300, budget=10_000)
-    selected_models, max_reward, spent_budget = trending(filename="selected_models.json")
+    selected_models, max_reward, spent_budget = trending(filename="selected_models.json", deploy_models=False)

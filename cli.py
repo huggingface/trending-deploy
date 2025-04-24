@@ -32,6 +32,11 @@ def parse_args():
         help="Path to save selected models as JSON. If not provided, models won't be saved to file."
     )
     parser.add_argument(
+        "--dry",
+        action="store_true",
+        help="Run in dry run mode. No models will be deployed."
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose output"
@@ -57,7 +62,7 @@ def main():
     )
 
     # Run the trending model selection and deployment
-    selected_models, max_reward, spent_budget = trending(filename=args.filename)
+    selected_models, max_reward, spent_budget = trending(filename=args.filename, deploy_models=not args.dry)
 
     logging.info(f"Selected {len(selected_models)} models with total reward of {max_reward}")
     logging.info(f"Spent budget: ${spent_budget:,} out of ${args.budget:,}")
