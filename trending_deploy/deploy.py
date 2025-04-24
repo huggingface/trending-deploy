@@ -62,7 +62,7 @@ def deploy_model(model: Model) -> bool:
     """
     try:
         model_name = model.model_info.id
-        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.split('/')[-1].replace('.', '-')}"[:31].lower()
+        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.split('/')[-1].replace('.', '-').replace('_', '-')}"[:31].lower()
 
         # Get task from model info
         task = model.model_info.pipeline_tag
