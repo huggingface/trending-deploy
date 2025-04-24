@@ -55,6 +55,8 @@ GPU_ONLY_TASKS = [
     "text-to-image",
     "text-to-video",
     "text-generation",
+    "automatic-speech-recognition",
+    "object-detection",
 ]
 NOT_IMPLEMENTED_TASKS = [
     "text-ranking",
