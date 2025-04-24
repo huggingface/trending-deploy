@@ -128,7 +128,7 @@ def deploy_model(model: Model) -> bool:
         endpoint.wait(timeout=300)
         print(f"Endpoint {endpoint_name} for model {model_name} deployed successfully.")
         add_collection_item(COLLECTION_SLUG, item_id=model_name, item_type="model")
-        
+
         return True
     except Exception as e:
         print(f"Error deploying model {model.model_info.id}: {e}")
@@ -151,6 +151,7 @@ def undeploy_model(model_name: str) -> bool:
         for endpoint in endpoints:
             if endpoint.repository == model_name and endpoint.name.startswith(ENDPOINT_PREFIX):
                 endpoint.delete()
+                delete_collection_item(COLLECTION_SLUG, item_id=model_name)
                 return True
         return False
     except Exception as e:
