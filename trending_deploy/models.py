@@ -64,6 +64,9 @@ def trending_model_generator(task: str) -> Iterator[Model]:
             "pipeline_tag",
         ],
     ):
+        if "custom_code" in model_info.tags:
+            continue
+
         # Get the number of parameters to determine which instance type is viable.
         # Sometimes it may fail (e.g. non-authorized models), so we just skip those models.
         try:

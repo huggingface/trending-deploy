@@ -87,9 +87,9 @@ def deploy_model(model: Model) -> bool:
                     print(f"Upgrading instance size for TEI model {model_name} from {instance_size} to {upgraded_size}")
                     instance_size = upgraded_size
                 else:
-                     print(f"Warning: Could not find mapping for next instance size ({next_memory} bytes) for TEI model {model_name}. Using {instance_size}.")
+                    print(f"Warning: Could not find mapping for next instance size ({next_memory} bytes) for TEI model {model_name}. Using {instance_size}.")
             elif current_index != -1:
-                 print(f"Warning: TEI model {model_name} is already on the largest instance size ({instance_size}). Cannot upgrade further.")
+                print(f"Warning: TEI model {model_name} is already on the largest instance size ({instance_size}). Cannot upgrade further.")
 
 
         endpoint_kwargs = {
@@ -110,16 +110,24 @@ def deploy_model(model: Model) -> bool:
             "tags": ["auto", "api-inference"]
         }
 
-        # Add custom image config specifically for TEI models AFTER potentially upgrading instance size
+        # Add custom image config specifically for embedding models AFTER potentially upgrading instance size
         if "text-embeddings-inference" in model.model_info.tags:
+            if task == "feature-extraction" and (
+                "sentence-transformers" in model.model_info.tags
+                or model.model_info.library_name == "sentence-transformers"
+            ):
+                task = "sentence-embeddings"
             endpoint_kwargs["custom_image"] = {
-                "health_route": "/health",  # Default health route for TEI
-                "port": 80,               # Default port
-                "url": "ghcr.io/huggingface/text-embeddings-inference:cpu-1.7.0", # Standard TEI image URL
-                # Consider adjusting these based on the upgraded instance size if needed
-                "maxBatchTokens": 16384,
-                "maxConcurrentRequests": 512,
+                "health_route": "/health",
+                "port": 5000,
+                "url": "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-6.1.0",
             }
+            endpoint_kwargs["secrets"] = {
+                "API_INFERENCE_COMPAT": "true",
+                "HF_MODEL_DIR": "/repository",
+                "HF_TASK": task,
+            }
+            endpoint_kwargs["task"] = task
 
         print(f"Creating endpoint {endpoint_name} for model {model_name} with instance size {instance_size}...")
         endpoint = create_inference_endpoint(**endpoint_kwargs)
