@@ -120,7 +120,7 @@ def deploy_model(model: Model) -> bool:
             endpoint_kwargs["custom_image"] = {
                 "health_route": "/health",
                 "port": 5000,
-                "url": "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-6.1.0",
+                "url": "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-6.2.0",
             }
             endpoint_kwargs["secrets"] = {
                 "API_INFERENCE_COMPAT": "true",
