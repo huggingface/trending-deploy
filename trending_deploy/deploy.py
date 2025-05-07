@@ -115,25 +115,24 @@ def deploy_model(model: Model) -> bool:
         if "text-embeddings-inference" in model.model_info.tags:
             # Update task for sentence transformers
             if task == "feature-extraction" and (
-                "sentence-transformers" in model.model_info.tags
+                any(x in model.model_info.tags for x in ["sentence-transformers", "sentence transformers"])
                 or model.model_info.library_name == "sentence-transformers"
             ):
                 task = "sentence-embeddings"
-            
             image_version = "6.2.0"
         elif task in ["token-classification", "text-classification"]:
             image_version = "6.2.2"
         else:
             # Skip custom image setup for other model types
             return
-            
+
         # Apply common configuration
         endpoint_kwargs["custom_image"] = {
             "health_route": "/health",
             "port": 5000,
             "url": f"registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-{image_version}",
         }
-        endpoint_kwargs["secrets"] = {
+        endpoint_kwargs["env"] = {
             "API_INFERENCE_COMPAT": "true",
             "HF_MODEL_DIR": "/repository",
             "HF_TASK": task,
@@ -215,7 +214,7 @@ def deploy_selected_models(models: List[Model]) -> dict[Literal["deployed_succes
 
     Args:
         models (list[Model]): A list of selected models to deploy.
-    
+
     Returns:
         dict: A dictionary containing lists of successfully and unsuccessfully deployed and undeployed models.
     """
@@ -230,7 +229,7 @@ def deploy_selected_models(models: List[Model]) -> dict[Literal["deployed_succes
             deployed_success.append(model_id)
         else:
             deployed_failed.append(model_id)
-    
+
     undeployed_success = []
     undeployed_failed = []
     for model_to_undeploy in deployed_model_names - set(to_deploy_models.keys()):
