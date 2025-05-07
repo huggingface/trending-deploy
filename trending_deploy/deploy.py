@@ -104,7 +104,7 @@ def deploy_model(model: Model) -> bool:
             "type": TYPE,
             "instance_size": instance_size, # Use the potentially upgraded size
             "instance_type": "intel-spr",
-            "scale_to_zero_timeout": 15,
+            "scale_to_zero_timeout": None,
             "domain": "api-inference.endpoints.huggingface.tech",
             "path": f"/models/{model_name}",
             "tags": ["auto", "api-inference"]
