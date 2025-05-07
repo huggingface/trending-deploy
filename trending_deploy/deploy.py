@@ -18,7 +18,7 @@ from trending_deploy.models import get_num_parameters_from_model, get_viable_ins
 HF_TOKEN = os.environ.get("HF_TOKEN")
 VENDOR = "aws"
 REGION = "us-east-1"
-TYPE = "public"
+TYPE = "protected"
 NAMESPACE = "hf-inference"
 ENDPOINT_PREFIX = "auto-"
 COLLECTION_SLUG = "hf-inference/deployed-models-680a42b770e6b6cd546c3fbc"
