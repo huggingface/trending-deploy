@@ -98,6 +98,7 @@ def deploy_model(model: Model) -> bool:
 
         # Add custom image config specifically for embedding models AFTER potentially upgrading instance size
         # Set custom image and secrets for specific model types
+        image_version = None
         if "text-embeddings-inference" in model.model_info.tags:
             # Update task for sentence transformers
             if task == "feature-extraction" and (
@@ -108,22 +109,20 @@ def deploy_model(model: Model) -> bool:
             image_version = "6.2.0"
         elif task in ["token-classification", "text-classification"]:
             image_version = "6.2.2"
-        else:
-            # Skip custom image setup for other model types
-            return
 
-        # Apply common configuration
-        endpoint_kwargs["custom_image"] = {
-            "health_route": "/health",
-            "port": 5000,
-            "url": f"registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-{image_version}",
-        }
-        endpoint_kwargs["env"] = {
-            "API_INFERENCE_COMPAT": "true",
-            "HF_MODEL_DIR": "/repository",
-            "HF_TASK": task,
-        }
-        endpoint_kwargs["task"] = task
+        # If a custom image is used, add the relevant image configuration
+        if image_version is not None:
+            endpoint_kwargs["custom_image"] = {
+                "health_route": "/health",
+                "port": 5000,
+                "url": f"registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-{image_version}",
+            }
+            endpoint_kwargs["env"] = {
+                "API_INFERENCE_COMPAT": "true",
+                "HF_MODEL_DIR": "/repository",
+                "HF_TASK": task,
+            }
+            endpoint_kwargs["task"] = task
 
         print(f"Creating endpoint {endpoint_name} for model {model_name} with instance size {instance_size}...")
         endpoint = create_inference_endpoint(**endpoint_kwargs)
