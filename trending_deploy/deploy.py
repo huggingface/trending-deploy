@@ -73,24 +73,9 @@ def deploy_model(model: Model) -> bool:
         instance_size = INSTANCE_SIZE_MAPPING.get(initial_memory, "x1") # Default to x1
 
         # Increase instance size by one notch for text-embeddings-inference
+        # With custom images for embedding models, we might not need this anymore
         if "text-embeddings-inference" in model.model_info.tags:
-            current_index = -1
-            for i, instance in enumerate(SORTED_INSTANCES):
-                if instance.memory_usage_bytes == initial_memory:
-                    current_index = i
-                    break
-
-            if current_index != -1 and current_index + 1 < len(SORTED_INSTANCES):
-                next_memory = SORTED_INSTANCES[current_index + 1].memory_usage_bytes
-                upgraded_size = INSTANCE_SIZE_MAPPING.get(next_memory)
-                if upgraded_size:
-                    print(f"Upgrading instance size for TEI model {model_name} from {instance_size} to {upgraded_size}")
-                    instance_size = upgraded_size
-                else:
-                    print(f"Warning: Could not find mapping for next instance size ({next_memory} bytes) for TEI model {model_name}. Using {instance_size}.")
-            elif current_index != -1:
-                print(f"Warning: TEI model {model_name} is already on the largest instance size ({instance_size}). Cannot upgrade further.")
-
+            instance_size = increase_instance_size(model, instance_size, initial_memory)
 
         endpoint_kwargs = {
             "name": endpoint_name,
@@ -153,6 +138,26 @@ def deploy_model(model: Model) -> bool:
     except Exception as e:
         print(f"Error deploying model {model.model_info.id}: {e}")
         return False
+
+def increase_instance_size(model: Model, instance_size, initial_memory) -> bool:
+    model_name = model.model_info.id
+    current_index = -1
+    for i, instance in enumerate(SORTED_INSTANCES):
+        if instance.memory_usage_bytes == initial_memory:
+            current_index = i
+            break
+
+    if current_index != -1 and current_index + 1 < len(SORTED_INSTANCES):
+        next_memory = SORTED_INSTANCES[current_index + 1].memory_usage_bytes
+        upgraded_size = INSTANCE_SIZE_MAPPING.get(next_memory)
+        if upgraded_size:
+            print(f"Upgrading instance size for TEI model {model_name} from {instance_size} to {upgraded_size}")
+            instance_size = upgraded_size
+        else:
+            print(f"Warning: Could not find mapping for next instance size ({next_memory} bytes) for TEI model {model_name}. Using {instance_size}.")
+    elif current_index != -1:
+        print(f"Warning: TEI model {model_name} is already on the largest instance size ({instance_size}). Cannot upgrade further.")
+    return instance_size
 
 
 def undeploy_model(model_name: str) -> bool:
