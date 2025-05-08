@@ -73,24 +73,9 @@ def deploy_model(model: Model) -> bool:
         instance_size = INSTANCE_SIZE_MAPPING.get(initial_memory, "x1") # Default to x1
 
         # Increase instance size by one notch for text-embeddings-inference
+        # With custom images for embedding models, we might not need this anymore
         if "text-embeddings-inference" in model.model_info.tags:
-            current_index = -1
-            for i, instance in enumerate(SORTED_INSTANCES):
-                if instance.memory_usage_bytes == initial_memory:
-                    current_index = i
-                    break
-
-            if current_index != -1 and current_index + 1 < len(SORTED_INSTANCES):
-                next_memory = SORTED_INSTANCES[current_index + 1].memory_usage_bytes
-                upgraded_size = INSTANCE_SIZE_MAPPING.get(next_memory)
-                if upgraded_size:
-                    print(f"Upgrading instance size for TEI model {model_name} from {instance_size} to {upgraded_size}")
-                    instance_size = upgraded_size
-                else:
-                    print(f"Warning: Could not find mapping for next instance size ({next_memory} bytes) for TEI model {model_name}. Using {instance_size}.")
-            elif current_index != -1:
-                print(f"Warning: TEI model {model_name} is already on the largest instance size ({instance_size}). Cannot upgrade further.")
-
+            instance_size = increase_instance_size(model, instance_size, initial_memory)
 
         endpoint_kwargs = {
             "name": endpoint_name,
@@ -104,6 +89,7 @@ def deploy_model(model: Model) -> bool:
             "type": TYPE,
             "instance_size": instance_size, # Use the potentially upgraded size
             "instance_type": "intel-spr",
+            "min_replica": 1,
             "scale_to_zero_timeout": None,
             "domain": "api-inference.endpoints.huggingface.tech",
             "path": f"/models/{model_name}",
@@ -112,6 +98,7 @@ def deploy_model(model: Model) -> bool:
 
         # Add custom image config specifically for embedding models AFTER potentially upgrading instance size
         # Set custom image and secrets for specific model types
+        image_version = None
         if "text-embeddings-inference" in model.model_info.tags:
             # Update task for sentence transformers
             if task == "feature-extraction" and (
@@ -122,22 +109,20 @@ def deploy_model(model: Model) -> bool:
             image_version = "6.2.0"
         elif task in ["token-classification", "text-classification"]:
             image_version = "6.2.2"
-        else:
-            # Skip custom image setup for other model types
-            return
 
-        # Apply common configuration
-        endpoint_kwargs["custom_image"] = {
-            "health_route": "/health",
-            "port": 5000,
-            "url": f"registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-{image_version}",
-        }
-        endpoint_kwargs["env"] = {
-            "API_INFERENCE_COMPAT": "true",
-            "HF_MODEL_DIR": "/repository",
-            "HF_TASK": task,
-        }
-        endpoint_kwargs["task"] = task
+        # If a custom image is used, add the relevant image configuration
+        if image_version is not None:
+            endpoint_kwargs["custom_image"] = {
+                "health_route": "/health",
+                "port": 5000,
+                "url": f"registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-{image_version}",
+            }
+            endpoint_kwargs["env"] = {
+                "API_INFERENCE_COMPAT": "true",
+                "HF_MODEL_DIR": "/repository",
+                "HF_TASK": task,
+            }
+            endpoint_kwargs["task"] = task
 
         print(f"Creating endpoint {endpoint_name} for model {model_name} with instance size {instance_size}...")
         endpoint = create_inference_endpoint(**endpoint_kwargs)
@@ -152,6 +137,26 @@ def deploy_model(model: Model) -> bool:
     except Exception as e:
         print(f"Error deploying model {model.model_info.id}: {e}")
         return False
+
+def increase_instance_size(model: Model, instance_size, initial_memory) -> bool:
+    model_name = model.model_info.id
+    current_index = -1
+    for i, instance in enumerate(SORTED_INSTANCES):
+        if instance.memory_usage_bytes == initial_memory:
+            current_index = i
+            break
+
+    if current_index != -1 and current_index + 1 < len(SORTED_INSTANCES):
+        next_memory = SORTED_INSTANCES[current_index + 1].memory_usage_bytes
+        upgraded_size = INSTANCE_SIZE_MAPPING.get(next_memory)
+        if upgraded_size:
+            print(f"Upgrading instance size for TEI model {model_name} from {instance_size} to {upgraded_size}")
+            instance_size = upgraded_size
+        else:
+            print(f"Warning: Could not find mapping for next instance size ({next_memory} bytes) for TEI model {model_name}. Using {instance_size}.")
+    elif current_index != -1:
+        print(f"Warning: TEI model {model_name} is already on the largest instance size ({instance_size}). Cannot upgrade further.")
+    return instance_size
 
 
 def undeploy_model(model_name: str) -> bool:
