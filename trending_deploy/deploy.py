@@ -99,16 +99,15 @@ def deploy_model(model: Model) -> bool:
         # Add custom image config specifically for embedding models AFTER potentially upgrading instance size
         # Set custom image and secrets for specific model types
         image_version = None
-        if "text-embeddings-inference" in model.model_info.tags:
-            # Update task for sentence transformers
+        if task in ["token-classification", "text-classification", "sentence-similarity", "feature-extraction",
+                    "object-detection"]:
+            # Override task
             if task == "feature-extraction" and (
-                any(x in model.model_info.tags for x in ["sentence-transformers", "sentence transformers"])
-                or model.model_info.library_name == "sentence-transformers"
+                    any(x in model.model_info.tags for x in ["sentence-transformers", "sentence transformers"])
+                    or model.model_info.library_name == "sentence-transformers"
             ):
                 task = "sentence-embeddings"
-            image_version = "6.2.0"
-        elif task in ["token-classification", "text-classification"]:
-            image_version = "6.2.2"
+            image_version = "6.2.3"
 
         # If a custom image is used, add the relevant image configuration
         if image_version is not None:
