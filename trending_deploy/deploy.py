@@ -22,6 +22,8 @@ TYPE = "protected"
 NAMESPACE = "hf-inference"
 ENDPOINT_PREFIX = "auto-"
 COLLECTION_SLUG = "hf-inference/deployed-models-680a42b770e6b6cd546c3fbc"
+DEFAULT_INSTANCE_TYPE = "intel-spr-overcommitted"
+DEFAULT_INSTANCE_SIZE = "x16"
 
 # Instance size mapping based on instance memory
 # Maps instance memory to HF instance size (x1, x2, etc.)
@@ -75,7 +77,8 @@ def deploy_model(model: Model) -> bool:
         # Increase instance size by one notch for text-embeddings-inference
         # With custom images for embedding models, we might not need this anymore
         if "text-embeddings-inference" in model.model_info.tags:
-            instance_size = increase_instance_size(model, instance_size, initial_memory)
+            # instance_size = increase_instance_size(model, instance_size, initial_memory)
+            instance_size = DEFAULT_INSTANCE_SIZE
 
         endpoint_kwargs = {
             "name": endpoint_name,
@@ -88,7 +91,7 @@ def deploy_model(model: Model) -> bool:
             "region": REGION,
             "type": TYPE,
             "instance_size": instance_size, # Use the potentially upgraded size
-            "instance_type": "intel-spr",
+            "instance_type": DEFAULT_INSTANCE_TYPE,
             "min_replica": 1,
             "scale_to_zero_timeout": None,
             "domain": "api-inference.endpoints.huggingface.tech",
