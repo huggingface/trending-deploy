@@ -55,6 +55,7 @@ GPU_ONLY_TASKS = [
     "text-to-image",
     "text-to-video",
     "text-generation",
+    "audio-classification",    
     "automatic-speech-recognition",
     "object-detection",
 ]
