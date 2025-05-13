@@ -24,6 +24,7 @@ ENDPOINT_PREFIX = "auto-"
 COLLECTION_SLUG = "hf-inference/deployed-models-680a42b770e6b6cd546c3fbc"
 DEFAULT_INSTANCE_TYPE = "intel-spr-overcommitted"
 DEFAULT_INSTANCE_SIZE = "x16"
+IMAGE = "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-6.2.3"
 
 # Instance size mapping based on instance memory
 # Maps instance memory to HF instance size (x1, x2, etc.)
@@ -99,32 +100,24 @@ def deploy_model(model: Model) -> bool:
             "tags": ["auto", "api-inference"]
         }
 
-        # Add custom image config specifically for embedding models AFTER potentially upgrading instance size
-        # Set custom image and secrets for specific model types
-        image_version = None
-        if task in ["token-classification", "text-classification", "sentence-similarity", "feature-extraction",
-                    "object-detection"]:
-            # Override task
-            if task == "feature-extraction" and (
-                    any(x in model.model_info.tags for x in ["sentence-transformers", "sentence transformers"])
-                    or model.model_info.library_name == "sentence-transformers"
-            ):
-                task = "sentence-embeddings"
-            image_version = "6.2.3"
+        # Override task
+        if task == "feature-extraction" and (
+                any(x in model.model_info.tags for x in ["sentence-transformers", "sentence transformers"])
+                or model.model_info.library_name == "sentence-transformers"
+        ):
+            task = "sentence-embeddings"
 
-        # If a custom image is used, add the relevant image configuration
-        if image_version is not None:
-            endpoint_kwargs["custom_image"] = {
-                "health_route": "/health",
-                "port": 5000,
-                "url": f"registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-{image_version}",
-            }
-            endpoint_kwargs["env"] = {
-                "API_INFERENCE_COMPAT": "true",
-                "HF_MODEL_DIR": "/repository",
-                "HF_TASK": task,
-            }
-            endpoint_kwargs["task"] = task
+        endpoint_kwargs["custom_image"] = {
+            "health_route": "/health",
+            "port": 5000,
+            "url": IMAGE
+        }
+        endpoint_kwargs["env"] = {
+            "API_INFERENCE_COMPAT": "true",
+            "HF_MODEL_DIR": "/repository",
+            "HF_TASK": task,
+        }
+        endpoint_kwargs["task"] = task
 
         print(f"Creating endpoint {endpoint_name} for model {model_name} with instance size {instance_size}...")
         endpoint = create_inference_endpoint(**endpoint_kwargs)
