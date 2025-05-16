@@ -74,7 +74,7 @@ def deploy_model(model: Model) -> bool:
         # Determine instance size
         initial_memory = model.viable_instance.memory_usage_bytes
         instance_size = INSTANCE_SIZE_MAPPING.get(initial_memory, "x1") # Default to x1
-
+        instance_size = DEFAULT_INSTANCE_SIZE
         # Increase instance size by one notch for text-embeddings-inference
         # With custom images for embedding models, we might not need this anymore
         if "text-embeddings-inference" in model.model_info.tags:
