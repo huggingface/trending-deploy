@@ -63,6 +63,7 @@ def trending_model_generator(task: str) -> Iterator[Model]:
             "safetensors",
             "pipeline_tag",
         ],
+        sort="downloads",
     ):
         if "custom_code" in model_info.tags:
             continue
