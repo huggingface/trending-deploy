@@ -1,3 +1,9 @@
+# /// script
+# dependencies = [
+#     "trending_deploy @ git+https://github.com/tomaarsen/trending-deploy.git@scheduled_hf_jobs",
+# ]
+# ///
+
 import argparse
 import logging
 
