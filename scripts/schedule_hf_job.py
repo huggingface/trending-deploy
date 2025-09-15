@@ -19,7 +19,7 @@ def main():
         schedule="@weekly",
         secrets={"HF_TOKEN": HF_TOKEN},
         flavor="cpu-basic",
-        timeout="2h",
+        timeout="8h",
         namespace="hf-inference",
     )
 
