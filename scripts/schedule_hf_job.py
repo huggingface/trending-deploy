@@ -24,12 +24,12 @@ def main():
 
     if SCHEDULE is None:
         run_uv_job(
-            "https://raw.githubusercontent.com/tomaarsen/trending-deploy/refs/heads/scheduled_hf_jobs/cli.py",
+            "https://raw.githubusercontent.com/huggingface/trending-deploy/refs/heads/main/cli.py",
             **kwargs,
         )
     else:
         create_scheduled_uv_job(
-            "https://raw.githubusercontent.com/tomaarsen/trending-deploy/refs/heads/scheduled_hf_jobs/cli.py",
+            "https://raw.githubusercontent.com/huggingface/trending-deploy/refs/heads/main/cli.py",
             schedule=SCHEDULE,
             **kwargs,
         )

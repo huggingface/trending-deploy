@@ -1,6 +1,6 @@
 # /// script
 # dependencies = [
-#     "trending_deploy @ git+https://github.com/tomaarsen/trending-deploy.git@scheduled_hf_jobs",
+#     "trending_deploy @ git+https://github.com/huggingface/trending-deploy.git",
 # ]
 # ///
 
