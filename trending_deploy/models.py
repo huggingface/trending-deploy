@@ -49,22 +49,56 @@ def trending_models_for_task(task: str, max_models_per_task: int = 200) -> List[
     return models_to_consider
 
 def trending_model_generator(task: str) -> Iterator[Model]:
-    for model_info in list_models(
-        pipeline_tag=task,
-        tags="endpoints_compatible",
-        expand=[
-            "createdAt",
-            "trendingScore",
-            "tags",
-            "library_name",
-            "likes",
-            "downloads",
-            "downloadsAllTime",
-            "safetensors",
-            "pipeline_tag",
-        ],
-        sort="downloads",
-    ):
+    def load_models_generator(task):
+        """
+        Interleaves a trending model generator with a downloads-based model generator,
+        yielding models from both generators until both are exhausted. Once the trending
+        generator fetches a model with a trending score of 0, it stops yielding from that
+        generator.
+        """
+        list_models_kwargs = {
+            "pipeline_tag": task,
+            "filter": "endpoints_compatible",
+            "expand": [
+                "createdAt",
+                "trendingScore",
+                "tags",
+                "library_name",
+                "likes",
+                "downloads",
+                "downloadsAllTime",
+                "safetensors",
+                "pipeline_tag",
+            ],
+        }
+        trending_models_generator = list_models(**list_models_kwargs)
+        downloads_models_generator = list_models(**list_models_kwargs, sort="downloads")
+
+        yielded_model_ids = set()
+        yield_trending = True
+
+        while True:
+            if yield_trending:
+                try:
+                    model = next(trending_models_generator)
+                except StopIteration:
+                    break
+                if model.trending_score == 0:
+                    yield_trending = False
+                else:
+                    if model.id not in yielded_model_ids:
+                        yielded_model_ids.add(model.id)
+                        yield model
+
+            try:
+                model = next(downloads_models_generator)
+            except StopIteration:
+                break
+            if model.id not in yielded_model_ids:
+                yielded_model_ids.add(model.id)
+                yield model
+
+    for model_info in load_models_generator(task):
         if "custom_code" in model_info.tags:
             continue
 
