@@ -1,3 +1,9 @@
+# /// script
+# dependencies = [
+#     "trending_deploy @ git+https://github.com/huggingface/trending-deploy.git",
+# ]
+# ///
+
 import argparse
 import logging
 
