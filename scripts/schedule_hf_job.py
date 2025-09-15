@@ -1,14 +1,14 @@
-from huggingface_hub import create_scheduled_uv_job
+from huggingface_hub import create_scheduled_uv_job, run_uv_job
 import os
 
 BUDGET = 500
 MAX_MODELS_PER_TASK = 30
 HF_TOKEN = os.environ["HF_TOKEN"]
+SCHEDULE = "@weekly"  # or "@daily", "@monthly", or None for one-time job
 
 def main():
-    create_scheduled_uv_job(
-        "https://raw.githubusercontent.com/tomaarsen/trending-deploy/refs/heads/scheduled_hf_jobs/cli.py",
-        script_args=[
+    kwargs = {
+        "script_args": [
             "--budget",
             str(BUDGET),
             "--max-models-per-task",
@@ -16,12 +16,23 @@ def main():
             "--verbose",
             "--dry",
         ],
-        schedule="@weekly",
-        secrets={"HF_TOKEN": HF_TOKEN},
-        flavor="cpu-basic",
-        timeout="8h",
-        namespace="hf-inference",
-    )
+        "secrets": {"HF_TOKEN": HF_TOKEN},
+        "flavor": "cpu-basic",
+        "timeout": "24h",
+        "namespace": "hf-inference",
+    }
+
+    if SCHEDULE is None:
+        run_uv_job(
+            "https://raw.githubusercontent.com/tomaarsen/trending-deploy/refs/heads/scheduled_hf_jobs/cli.py",
+            **kwargs,
+        )
+    else:
+        create_scheduled_uv_job(
+            "https://raw.githubusercontent.com/tomaarsen/trending-deploy/refs/heads/scheduled_hf_jobs/cli.py",
+            schedule=SCHEDULE,
+            **kwargs,
+        )
 
 if __name__ == "__main__":
     main()
