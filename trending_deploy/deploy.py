@@ -59,7 +59,7 @@ def get_endpoint_name(model_name: str) -> str:
         model_name (str): The full model name (e.g., "google-bert/bert-base-uncased").
 
     Returns:
-        str: A valid endpoint name, e.g. "auto-bert-base-uncased-0342c6".
+        str: A valid endpoint name, e.g. "auto-bert-base-uncased-6237a9".
     """
     # Normalize the model name by taking the name only and normalizing . and _ 
     norm_model_name = model_name.split("/")[-1]
@@ -69,7 +69,7 @@ def get_endpoint_name(model_name: str) -> str:
     # Truncate to 24 characters, so that with additional suffixes we stay within the 32 character limit,
     # leaving space for the hash and hyphen
     norm_model_name = norm_model_name[:32 - 7]
-    model_hash = hashlib.sha1(model_name.encode()).hexdigest()[:6]
+    model_hash = hashlib.sha256(model_name.encode(), usedforsecurity=False).hexdigest()[:6]
     endpoint_name = f"{norm_model_name}-{model_hash}"
     return endpoint_name
 
