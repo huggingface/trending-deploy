@@ -3,6 +3,7 @@ from typing import Iterator, List
 from huggingface_hub import list_models, ModelInfo, hf_hub_download, model_info as get_model_info
 from huggingface_hub.utils import disable_progress_bars, enable_progress_bars
 import json
+import time
 from tqdm import tqdm, trange
 
 from trending_deploy.constants import Instance, Model, MEMORY_USAGE_TO_INSTANCE
@@ -25,6 +26,9 @@ def trending_models(tasks: list[str], max_models_per_task: int = 200) -> List[Mo
     for task in tasks_iterator:
         tasks_iterator.set_description(f"Loading trending models for {task}")
         models_to_consider.extend(trending_models_for_task(task, max_models_per_task))
+        if task != tasks[-1]:
+            # Add a delay to ideally avoid hitting rate limits
+            time.sleep(60)
 
     return models_to_consider
 
