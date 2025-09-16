@@ -1,18 +1,15 @@
-from typing import List, Literal, Dict, Any
+from typing import List, Literal
 import os
 from huggingface_hub import (
-    InferenceClient,
     create_inference_endpoint,
-    get_inference_endpoint,
     get_collection,
     list_inference_endpoints,
-    model_info as get_model_info,
     add_collection_item,
     delete_collection_item,
 )
+import hashlib
 
-from trending_deploy.constants import Model, MEMORY_USAGE_TO_INSTANCE, Instance, INSTANCES
-from trending_deploy.models import get_num_parameters_from_model, get_viable_instance_from_num_parameters
+from trending_deploy.constants import Model, INSTANCES
 
 # Configuration
 HF_TOKEN = os.environ.get("HF_TOKEN")
@@ -54,6 +51,29 @@ def load_deployed_models() -> List[str]:
         return []
 
 
+def get_endpoint_name(model_name: str) -> str:
+    """
+    Generate a valid endpoint name based on the model name.
+
+    Args:
+        model_name (str): The full model name (e.g., "google-bert/bert-base-uncased").
+
+    Returns:
+        str: A valid endpoint name, e.g. "auto-bert-base-uncased-0342c6".
+    """
+    # Normalize the model name by taking the name only and normalizing . and _ 
+    norm_model_name = model_name.split("/")[-1]
+    norm_model_name = norm_model_name.replace(".", "-").replace("_", "-")
+    norm_model_name = norm_model_name.lower()
+    norm_model_name = ENDPOINT_PREFIX + norm_model_name
+    # Truncate to 24 characters, so that with additional suffixes we stay within the 32 character limit,
+    # leaving space for the hash and hyphen
+    norm_model_name = norm_model_name[:32 - 7]
+    model_hash = hashlib.sha1(model_name.encode()).hexdigest()[:6]
+    endpoint_name = f"{norm_model_name}-{model_hash}"
+    return endpoint_name
+
+
 def deploy_model(model: Model) -> bool:
     """
     Deploy the specified model.
@@ -66,7 +86,7 @@ def deploy_model(model: Model) -> bool:
     """
     try:
         model_name = model.model_info.id
-        endpoint_name = f"{ENDPOINT_PREFIX}{model_name.split('/')[-1].replace('.', '-').replace('_', '-')}"[:31].lower()
+        endpoint_name = get_endpoint_name(model_name)
 
         # Get task from model info
         task = model.model_info.pipeline_tag
