@@ -61,9 +61,9 @@ class Trending():
             results = deploy_selected_models(selected_models)
 
             logging.debug(f"Deployed models: {results['deployed_success']}")
-            logging.warning(f"Failed to deploy models: {results['deployed_failed']}")
+            logging.warning(f"Failed to deploy models ({len(results['deployed_failed'])} total): {results['deployed_failed']}")
             logging.debug(f"Models already deployed: {results['undeployed_success']}")
-            logging.warning(f"Failed to undeploy models: {results['undeployed_failed']}")
+            logging.warning(f"Failed to undeploy models ({len(results['undeployed_failed'])} total): {results['undeployed_failed']}")
 
         return selected_models, max_reward, spent_budget
 
