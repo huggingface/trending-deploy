@@ -21,7 +21,7 @@ ENDPOINT_PREFIX = "auto-"
 COLLECTION_SLUG = "hf-inference/deployed-models-680a42b770e6b6cd546c3fbc"
 DEFAULT_INSTANCE_TYPE = "intel-spr-overcommitted"
 DEFAULT_INSTANCE_SIZE = "x16"
-IMAGE = "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-6.5.0"
+IMAGE = "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-6.6.0"
 
 # Instance size mapping based on instance memory
 # Maps instance memory to HF instance size (x1, x2, etc.)
@@ -114,6 +114,9 @@ def deploy_model(model: Model) -> bool:
             "instance_size": instance_size, # Use the potentially upgraded size
             "instance_type": DEFAULT_INSTANCE_TYPE,
             "min_replica": 1,
+            "max_replica": 5,
+            "scaling_metric": "pendingRequests",
+            "scaling_threshold": 2,
             "scale_to_zero_timeout": None,
             "domain": "api-inference.endpoints.huggingface.tech",
             "path": f"/models/{model_name}",
