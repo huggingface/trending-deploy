@@ -1,4 +1,5 @@
 
+import logging
 from typing import Iterator, List
 from huggingface_hub import list_models, ModelInfo, hf_hub_download, model_info as get_model_info
 from huggingface_hub.utils import disable_progress_bars, enable_progress_bars
@@ -80,6 +81,7 @@ def trending_model_generator(task: str) -> Iterator[Model]:
 
         yielded_model_ids = set()
         yield_trending = True
+        error_counter = 0
 
         while True:
             if yield_trending:
@@ -87,6 +89,13 @@ def trending_model_generator(task: str) -> Iterator[Model]:
                     model = next(trending_models_generator)
                 except StopIteration:
                     break
+                except Exception as exc:
+                    error_counter += 1
+                    logging.warning(f"Error fetching trending model: {exc}. Retrying after delay...")
+                    time.sleep(60)
+                    if error_counter >= 5:
+                        raise exc
+                    continue
                 if model.trending_score == 0:
                     yield_trending = False
                 else:
@@ -98,6 +107,13 @@ def trending_model_generator(task: str) -> Iterator[Model]:
                 model = next(downloads_models_generator)
             except StopIteration:
                 break
+            except Exception as exc:
+                error_counter += 1
+                logging.warning(f"Error fetching downloads model: {exc}. Retrying after delay...")
+                time.sleep(60)
+                if error_counter >= 5:
+                    raise exc
+                continue
             if model.id not in yielded_model_ids:
                 yielded_model_ids.add(model.id)
                 yield model
