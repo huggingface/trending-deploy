@@ -1,2 +1,2 @@
 numpy
-huggingface_hub
+huggingface_hub>1.1.4
