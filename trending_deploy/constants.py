@@ -59,12 +59,7 @@ GPU_ONLY_TASKS = [
     "automatic-speech-recognition",
     "object-detection",
 ]
-NOT_IMPLEMENTED_TASKS = [
-    "text-ranking",
-]
-DEFAULT_TASKS = [
-    task for task in ALL_TASKS if task not in (GPU_ONLY_TASKS + NOT_IMPLEMENTED_TASKS)
-]
+DEFAULT_TASKS = [task for task in ALL_TASKS if task not in GPU_ONLY_TASKS]
 
 # Just AWS for now
 INSTANCES = [
