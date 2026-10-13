@@ -10,6 +10,31 @@ from tqdm import tqdm, trange
 from trending_deploy.constants import Instance, Model, MEMORY_USAGE_TO_INSTANCE
 
 
+EXCLUDED_MODEL_AUTHORS = {
+    "unsloth",
+    "mlx-community",
+    "onnx-community",
+    "mradermacher",
+    "bartowski",
+    "thebloke",
+    "lmstudio-community",
+    "unslothai",
+    "sentence-transformers-testing",
+    "multi-vector-encoder-testing",
+    "sparse-encoder-testing",
+    "cross-encoder-testing",
+}
+EXCLUDED_MODEL_TAGS = {
+    "custom_code",
+    "multi-vector",
+    "sparse",
+    "colbert",
+    "pylate",
+    "splade",
+    "sparse-encoder",
+}
+
+
 def trending_models(tasks: list[str], max_models_per_task: int = 200) -> List[Model]:
     """
     Fetches the trending models for the specified tasks.
@@ -65,6 +90,7 @@ def trending_model_generator(task: str) -> Iterator[Model]:
             "pipeline_tag": task,
             "filter": "endpoints_compatible",
             "expand": [
+                "author",
                 "createdAt",
                 "trendingScore",
                 "tags",
@@ -119,7 +145,9 @@ def trending_model_generator(task: str) -> Iterator[Model]:
                 yield model
 
     for model_info in load_models_generator(task):
-        if "custom_code" in model_info.tags:
+        if (model_info.author or "").lower() in EXCLUDED_MODEL_AUTHORS:
+            continue
+        if any(tag.lower() in EXCLUDED_MODEL_TAGS for tag in (model_info.tags or [])):
             continue
 
         # Get the number of parameters to determine which instance type is viable.
