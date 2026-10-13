@@ -2,23 +2,18 @@ from typing import List, Literal
 import os
 from huggingface_hub import (
     create_inference_endpoint,
-    get_collection,
     list_inference_endpoints,
-    add_collection_item,
-    delete_collection_item,
 )
 import hashlib
 
 from trending_deploy.constants import Model, INSTANCES
+from trending_deploy.collections import NAMESPACE, ENDPOINT_PREFIX, sync_deployed_collections
 
 # Configuration
 HF_TOKEN = os.environ.get("HF_TOKEN")
 VENDOR = "aws"
 REGION = "us-east-1"
 TYPE = "private"
-NAMESPACE = "hf-inference"
-ENDPOINT_PREFIX = "auto-"
-COLLECTION_SLUG = "hf-inference/deployed-models-680a42b770e6b6cd546c3fbc"
 DEFAULT_INSTANCE_TYPE = "intel-spr-overcommitted"
 DEFAULT_INSTANCE_SIZE = "x16"
 IMAGE = "registry.internal.huggingface.tech/hf-endpoints/inference-pytorch-cpu:api-inference-9.1.1"
@@ -74,7 +69,14 @@ def get_endpoint_name(model_name: str) -> str:
     return endpoint_name
 
 
-def deploy_model(model: Model) -> bool:
+def _sync_collections() -> None:
+    try:
+        sync_deployed_collections()
+    except Exception as exc:
+        print(f"Error syncing deployed model collections: {exc}")
+
+
+def deploy_model(model: Model, *, sync_collections: bool = True) -> bool:
     """
     Deploy the specified model.
 
@@ -153,7 +155,8 @@ def deploy_model(model: Model) -> bool:
         # Wait for deployment (with timeout to avoid blocking indefinitely)
         endpoint.wait(timeout=300)
         print(f"Endpoint {endpoint_name} for model {model_name} deployed successfully.")
-        add_collection_item(COLLECTION_SLUG, item_id=model_name, item_type="model")
+        if sync_collections:
+            _sync_collections()
 
         return True
     except Exception as e:
@@ -181,7 +184,7 @@ def increase_instance_size(model: Model, instance_size, initial_memory) -> bool:
     return instance_size
 
 
-def undeploy_model(model_name: str) -> bool:
+def undeploy_model(model_name: str, *, sync_collections: bool = True) -> bool:
     """
     Undeploy the specified model.
 
@@ -205,29 +208,8 @@ def undeploy_model(model_name: str) -> bool:
 
         if not endpoint_found:
             print(f"Warning: Endpoint for model {model_name} not found. Cannot undeploy.")
-            # Decide if this should be considered a failure or success if no endpoint existed
-            return True # Or False, depending on desired behavior
-
-        # Find and delete the corresponding item in the collection
-        try:
-            collection = get_collection(COLLECTION_SLUG)
-            item_object_id_to_delete = None
-            for item in collection.items:
-                # item_id is the model repo id (e.g., 'bert-base-uncased')
-                # _id is the collection item's internal object id
-                if item.item_type == "model" and item.item_id == model_name:
-                    item_object_id_to_delete = item.item_object_id
-                    break
-
-            if item_object_id_to_delete:
-                print(f"Deleting item for {model_name} (ID: {item_object_id_to_delete}) from collection {COLLECTION_SLUG}...")
-                delete_collection_item(COLLECTION_SLUG, item_object_id=item_object_id_to_delete)
-                print(f"Collection item for {model_name} deleted successfully.")
-            else:
-                print(f"Warning: Could not find item for model {model_name} in collection {COLLECTION_SLUG}.")
-
-        except Exception as e_coll:
-            print(f"Error managing collection item for model {model_name}: {e_coll}")
+        if sync_collections:
+            _sync_collections()
 
         return True # Return True as endpoint deletion was the primary goal
     except Exception as e:
@@ -251,7 +233,7 @@ def deploy_selected_models(models: List[Model]) -> dict[Literal["deployed_succes
     deployed_success = []
     deployed_failed = []
     for model_id in set(to_deploy_models.keys()) - deployed_model_names:
-        success = deploy_model(to_deploy_models[model_id])
+        success = deploy_model(to_deploy_models[model_id], sync_collections=False)
         if success:
             deployed_success.append(model_id)
         else:
@@ -260,11 +242,13 @@ def deploy_selected_models(models: List[Model]) -> dict[Literal["deployed_succes
     undeployed_success = []
     undeployed_failed = []
     for model_to_undeploy in deployed_model_names - set(to_deploy_models.keys()):
-        success = undeploy_model(model_to_undeploy)
+        success = undeploy_model(model_to_undeploy, sync_collections=False)
         if success:
             undeployed_success.append(model_to_undeploy)
         else:
             undeployed_failed.append(model_to_undeploy)
+
+    _sync_collections()
 
     return {
         "deployed_success": deployed_success,
