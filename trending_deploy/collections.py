@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Collection
 from datetime import datetime, timezone
 
 from huggingface_hub import HfApi, ModelInfo
@@ -25,13 +26,14 @@ def release_note(model: ModelInfo) -> str:
     return f"Release date: {release_date(model):%Y-%m-%d}"
 
 
-def deployed_models_by_task(api: HfApi) -> dict[str, list[ModelInfo]]:
+def deployed_models_by_task(api: HfApi, *, excluded_model_ids: Collection[str] = ()) -> dict[str, list[ModelInfo]]:
     model_ids = {
         endpoint.repository
         for endpoint in api.list_inference_endpoints(namespace=NAMESPACE)
         if endpoint.name.startswith(ENDPOINT_PREFIX)
         and endpoint.status in {"running", "scaledToZero", "paused", "updating"}
     }
+    model_ids.difference_update(excluded_model_ids)
     metadata = {
         model.id: model
         for model in api.list_models(inference_provider="hf-inference", expand=["createdAt", "pipeline_tag"])
@@ -73,9 +75,9 @@ def sync_items(api: HfApi, slug: str, desired: list[tuple[str, str, str]]) -> No
             items.insert(position, item)
 
 
-def sync_deployed_collections(*, dry_run: bool = False) -> None:
+def sync_deployed_collections(*, dry_run: bool = False, excluded_model_ids: Collection[str] = ()) -> None:
     api = HfApi()
-    grouped = deployed_models_by_task(api)
+    grouped = deployed_models_by_task(api, excluded_model_ids=excluded_model_ids)
     if dry_run:
         for task, models in grouped.items():
             print(f"{TASK_TITLE_PREFIX}{task.replace('-', ' ').title()} ({len(models)} models)")

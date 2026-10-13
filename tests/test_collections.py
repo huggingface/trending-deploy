@@ -174,6 +174,52 @@ def test_excludes_failed_and_unmanaged_endpoints(api):
 def test_batch_syncs_once_even_without_deployment_changes(monkeypatch):
     sync_calls = []
     monkeypatch.setattr(deploy, "load_deployed_models", lambda: [])
-    monkeypatch.setattr(deploy, "_sync_collections", lambda: sync_calls.append(True))
+    monkeypatch.setattr(deploy, "_sync_collections", lambda **kwargs: sync_calls.append(kwargs))
     deploy.deploy_selected_models([])
-    assert sync_calls == [True]
+    assert sync_calls == [{"excluded_model_ids": []}]
+
+
+def test_undeploy_removes_model_despite_stale_endpoint_listing(api, monkeypatch):
+    collections.sync_deployed_collections()
+    endpoint = next(endpoint for endpoint in api.endpoints if endpoint.repository == "org/new")
+    deletions = []
+    endpoint.delete = lambda: deletions.append(endpoint.name)
+    monkeypatch.setattr(deploy, "list_inference_endpoints", api.list_inference_endpoints)
+
+    assert deploy.undeploy_model("org/new")
+
+    assert deletions == [endpoint.name]
+    assert endpoint in api.endpoints
+    items = [item for collection in api.collections.values() for item in collection.items]
+    assert not any(item.item_type == "model" and item.item_id == "org/new" for item in items)
+    assert any(item.item_type == "model" and item.item_id == "org/tie" for item in items)
+
+
+def test_batch_sync_excludes_successful_deletions_but_keeps_failed_deletions(api, monkeypatch):
+    def fail_delete():
+        raise RuntimeError("Deletion failed")
+
+    for endpoint in api.endpoints:
+        endpoint.delete = fail_delete if endpoint.repository == "org/old" else lambda: None
+    monkeypatch.setattr(deploy, "list_inference_endpoints", api.list_inference_endpoints)
+
+    result = deploy.deploy_selected_models([])
+
+    assert result["undeployed_failed"] == ["org/old"]
+    assert set(result["undeployed_success"]) == set(api.models) - {"org/old"}
+    items = [item for collection in api.collections.values() for item in collection.items]
+    assert [item.item_id for item in items if item.item_type == "model"] == ["org/old"]
+
+
+def test_failed_undeploy_keeps_collection_entry(api, monkeypatch):
+    def fail_delete():
+        raise RuntimeError("Deletion failed")
+
+    collections.sync_deployed_collections()
+    original_collections = copy.deepcopy(api.collections)
+    endpoint = next(endpoint for endpoint in api.endpoints if endpoint.repository == "org/new")
+    endpoint.delete = fail_delete
+    monkeypatch.setattr(deploy, "list_inference_endpoints", api.list_inference_endpoints)
+
+    assert not deploy.undeploy_model("org/new")
+    assert api.collections == original_collections
