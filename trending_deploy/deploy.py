@@ -1,4 +1,5 @@
 from typing import List, Literal
+from collections.abc import Collection
 import os
 from huggingface_hub import (
     create_inference_endpoint,
@@ -69,9 +70,11 @@ def get_endpoint_name(model_name: str) -> str:
     return endpoint_name
 
 
-def _sync_collections() -> None:
+def _sync_collections(*, excluded_model_ids: Collection[str] = ()) -> None:
     try:
-        sync_deployed_collections()
+        print("Syncing deployed model collections...")
+        sync_deployed_collections(excluded_model_ids=excluded_model_ids)
+        print("Deployed model collections synced successfully.")
     except Exception as exc:
         print(f"Error syncing deployed model collections: {exc}")
 
@@ -203,13 +206,13 @@ def undeploy_model(model_name: str, *, sync_collections: bool = True) -> bool:
                 print(f"Deleting endpoint {endpoint.name} for model {model_name}...")
                 endpoint.delete()
                 endpoint_found = True
-                print(f"Endpoint {endpoint.name} deleted successfully.")
+                print(f"Deletion requested for endpoint {endpoint.name}.")
                 break # Assuming only one endpoint per model
 
         if not endpoint_found:
             print(f"Warning: Endpoint for model {model_name} not found. Cannot undeploy.")
         if sync_collections:
-            _sync_collections()
+            _sync_collections(excluded_model_ids={model_name})
 
         return True # Return True as endpoint deletion was the primary goal
     except Exception as e:
@@ -248,7 +251,7 @@ def deploy_selected_models(models: List[Model]) -> dict[Literal["deployed_succes
         else:
             undeployed_failed.append(model_to_undeploy)
 
-    _sync_collections()
+    _sync_collections(excluded_model_ids=undeployed_success)
 
     return {
         "deployed_success": deployed_success,
